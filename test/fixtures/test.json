@@ -1,0 +1,19 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "/model/test",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "number"
+        },
+        "user": {
+            "$ref": "user.json"
+        },
+        "hash": {
+            "type": "string"
+        }
+    },
+    "required": [
+        "user"
+    ]
+}

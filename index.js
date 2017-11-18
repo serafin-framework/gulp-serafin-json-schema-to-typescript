@@ -45,7 +45,6 @@ function gulpSchemaToTypescript(opt) {
             allOf: [`#/definitions/${modelName}`, ...Object.keys(schema.definitions || {}).map(n => `#/definitions/${n}`)].map(p => { return { $ref: p } })
         }
         fullSchema.definitions[modelName] = schema;
-        console.info(fullSchema)
         jsonSchemaToTypescript.compile(fullSchema, "_", opt).then(function (ts) {
             var newFile = file.clone({ contents: false });
             newFile.path = path.join(file.base, `${modelName}.ts`);

@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "id": "/model/user",
+    "id": "/user",
     "type": "object",
     "properties": {
         "id": {
@@ -11,6 +11,20 @@
         },
         "email": {
             "type": "string"
+        }
+    },
+    "definitions": {
+        "createValues": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                }
+            },
+            "required": ["email", "name"]
         }
     },
     "required": [

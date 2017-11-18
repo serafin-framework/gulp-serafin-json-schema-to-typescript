@@ -19,13 +19,14 @@ describe('SchemaToTypescript', function () {
     // delete all temp files when we are done
     after(function (done) {
         del([
+            path.join(testFilesPath, "/*"),
             testFilesPath
-        ], done);
+        ]).then(() => done());
     });
 
     describe('plugin', function () {
         it('should ignore null files', function (done) {
-            var stream = schemaToTypescript("model.ts");
+            var stream = schemaToTypescript();
             stream
                 .pipe(assert.length(0))
                 .pipe(assert.end(done));
@@ -35,7 +36,7 @@ describe('SchemaToTypescript', function () {
 
         it('should emit error on streamed file', function (done) {
             gulp.src(path.join(__dirname, 'fixtures', '/*'), { buffer: false })
-                .pipe(schemaToTypescript("model.ts"))
+                .pipe(schemaToTypescript())
                 .once('error', function (err) {
                     expect(err.message).to.equal('gulp-serafin-json-schema-to-typescript: Streaming not supported');
                     done();
@@ -45,7 +46,7 @@ describe('SchemaToTypescript', function () {
 
         it('should convert one file', function (done) {
             gulp.src(path.join(__dirname, 'fixtures', '/user.json'))
-                .pipe(schemaToTypescript("model.ts"))
+                .pipe(schemaToTypescript())
                 .pipe(assert.length(1))
                 .pipe(assert.end(done));
         });
@@ -53,21 +54,20 @@ describe('SchemaToTypescript', function () {
 
         it('should convert multiple files', function (done) {
             gulp.src(path.join(__dirname, 'fixtures', '/*'))
-                .pipe(schemaToTypescript("model.ts", {
+                .pipe(schemaToTypescript({
                     cwd: path.join(__dirname, 'fixtures')
                 }))
-                .pipe(assert.length(1))
+                .pipe(assert.length(2))
                 .pipe(assert.end(done));
         });
 
 
         it('should convert and write multiple files', function (done) {
             gulp.src(path.join(__dirname, 'fixtures', '/*'))
-                .pipe(schemaToTypescript("model.ts", {
-                    cwd: path.join(__dirname, 'fixtures'),
-                    declareExternallyReferenced: false
+                .pipe(schemaToTypescript({
+                    cwd: path.join(__dirname, 'fixtures')
                 }))
-                .pipe(assert.length(1))
+                .pipe(assert.length(2))
                 .pipe(gulp.dest(testFilesPath))
                 .pipe(assert.end(done));
         });

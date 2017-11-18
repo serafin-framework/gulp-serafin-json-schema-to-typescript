@@ -8,22 +8,18 @@ var PluginError = gutil.PluginError;
 const PLUGIN_NAME = 'gulp-serafin-json-schema-to-typescript';
 
 // plugin function
-function gulpSchemaToTypescript(fileName, opt) {
+function gulpSchemaToTypescript(opt) {
     opt = opt || {};
-    // externally referenced is desactivated because we combine results at the end 
-    opt.declareExternallyReferenced = false;
-    // remove default banner comment
-    opt.bannerComment = ""
-
-    // check if fileName was provided
-    if (!fileName) {
-        throw new Error(PLUGIN_NAME + ': fileName parameter is mandatory');
-    }
+    // we need reference to be activated for local path to work
+    opt.declareExternallyReferenced = true;
+    // change default banner comment
+    opt.bannerComment = `/**
+ * This file was automatically generated. DO NOT MODIFY.
+ */
+`
 
     // hold converted contents of all input json schemas
     var contents = [];
-    // a ref to the latest converted file
-    var latestFile;
 
     function convertContents(file, encoding, callback) {
         // if file is null, nothing needs to be done
@@ -37,35 +33,32 @@ function gulpSchemaToTypescript(fileName, opt) {
         }
 
         // convert the schema to typescript with json-schema-to-typescript
-        latestFile = file
         var _this = this;
         var schema = JSON.parse(file.contents);
         var id = schema.id;
-        var modelName = _.upperFirst(_.camelCase(id.split("/").slice(-1).join(" ").replace(".json", "")))
-        jsonSchemaToTypescript.compile(schema, modelName, opt).then(function (ts) {
-            contents.push(ts);
-            callback();
+        var modelName = _.upperFirst(_.camelCase((id ? id : file.path).split("/").slice(-1).join(" ").replace(".json", "")));
+        
+        // create a schema that forces reference to all definitions to ensure they are generated
+        // it will be nice if it's added as an option of json-schema-to-typescript library
+        var fullSchema = {
+            definitions: _.clone(schema.definitions || {}),
+            allOf: [`#/definitions/${modelName}`, ...Object.keys(schema.definitions || {}).map(n => `#/definitions/${n}`)].map(p => { return { $ref: p } })
+        }
+        fullSchema.definitions[modelName] = schema;
+        console.info(fullSchema)
+        jsonSchemaToTypescript.compile(fullSchema, "_", opt).then(function (ts) {
+            var newFile = file.clone({ contents: false });
+            newFile.path = path.join(file.base, `${modelName}.ts`);
+            newFile.contents = new Buffer(ts);
+    
+            callback(null, newFile);
+        }).catch((err) => {
+            callback(err);
         });
     }
 
-    function combineContents(callback) {
-        if (contents.length === 0) {
-            callback();
-            return;
-        }
 
-        var modelFile = latestFile.clone({ contents: false });
-        modelFile.path = path.join(latestFile.base, fileName);
-        contents.unshift(`/**
- * This file was automatically generated. DO NOT MODIFY.
- */
-`)
-        modelFile.contents = new Buffer(contents.join("\n"));
-        this.push(modelFile);
-        callback();
-    }
-
-    return through.obj(convertContents, combineContents);
+    return through.obj(convertContents);
 }
 
 module.exports = gulpSchemaToTypescript;

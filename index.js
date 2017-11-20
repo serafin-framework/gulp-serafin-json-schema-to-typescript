@@ -71,7 +71,7 @@ function gulpSchemaToTypescript(opt) {
                         return ", any"
                     }
                 }).join("");
-                ts = `${ts}\n\nexport var ${_.lowerFirst(modelName)}Schema = new ${opt.modelSchemaClass}<${genericTypesDeclaration}>(${ JSON.stringify(schema) }, ${schema.id ? schema.id : modelName });\n`
+                ts = `${ts}\n\nexport var ${_.lowerFirst(modelName)}Schema = new ${opt.modelSchemaClass}<${genericTypesDeclaration}>(${ JSON.stringify(schema) }, "${schema.id ? schema.id : modelName }");\n`
             }
 
             var newFile = file.clone({ contents: false });

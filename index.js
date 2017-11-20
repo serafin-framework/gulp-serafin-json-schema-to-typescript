@@ -66,12 +66,12 @@ function gulpSchemaToTypescript(opt) {
             if (opt.generateModelSchema) {
                 let genericTypesDeclaration = modelName + ["createValues", "readQuery", "updateValues", "patchQuery", "patchValues", "deleteQuery"].map(d => {
                     if (d in fullSchema.definitions) {
-                        return ", " + d
+                        return ", " + _.upperFirst(d)
                     } else {
                         return ", any"
                     }
                 }).join("");
-                ts = `${ts}\n\nexport var ${_.lowerFirst(modelName)}Schema = new ${opt.modelSchemaClass}<${genericTypesDeclaration}>(${ schema }, ${schema.id ? schema.id : modelName });\n`
+                ts = `${ts}\n\nexport var ${_.lowerFirst(modelName)}Schema = new ${opt.modelSchemaClass}<${genericTypesDeclaration}>(${ JSON.stringify(schema) }, ${schema.id ? schema.id : modelName });\n`
             }
 
             var newFile = file.clone({ contents: false });

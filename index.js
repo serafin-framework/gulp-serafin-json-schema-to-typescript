@@ -64,7 +64,7 @@ function gulpSchemaToTypescript(opt) {
             ts = opt.bannerComment + ts;
             // add model schema declaration at the end
             if (opt.generateModelSchema) {
-                let genericTypesDeclaration = modelName + ["createValues", "readQuery", "updateValues", "patchQuery", "patchValues", "deleteQuery"].map(d => {
+                let genericTypesDeclaration = modelName + ["readQuery", "createValues", "updateValues", "patchQuery", "patchValues", "deleteQuery"].map(d => {
                     if (d in fullSchema.definitions) {
                         return ", " + _.upperFirst(d)
                     } else {

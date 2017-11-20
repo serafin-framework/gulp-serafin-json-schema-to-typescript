@@ -2,6 +2,7 @@ var jsonSchemaToTypescript = require('json-schema-to-typescript');
 var path = require('path')
 var _ = require('lodash')
 var through = require('through2');
+var gulp = require('gulp');
 var gutil = require('gulp-util');
 var PluginError = gutil.PluginError;
 
@@ -87,4 +88,41 @@ function gulpSchemaToTypescript(opt) {
     return through.obj(convertContents);
 }
 
-module.exports = gulpSchemaToTypescript;
+/**
+ * Provides the Gulp tasks watch-model and build-model
+ * 
+ * @param gulp Gulp object
+ * @param sourcePath Path(s) of the files containing JSON-Schema models 
+ * @param modelDirectory Model file directory
+ * @param taskSuffix Optional task suffix allow to create multiple tasks for differents model files, in case of sub-projects
+ */
+function gulpTasksModel(gulp, sourcePath, modelDirectory, taskSuffix = null) {
+    if (typeof taskSuffix == 'string') {
+        taskSuffix = '-' + taskSuffix;
+    } else {
+        taskSuffix = '';
+    }
+
+    if (typeof sourcePath == 'String') {
+        sourcePath = [sourcePath];
+    }
+
+    if (!typeof sourcePath == 'Array') {
+        throw Error("Source directory: Array or String expected");
+    }
+
+    gulp.task('watch-model' + taskSuffix, function () {
+        return gulp.watch(sourcePath, { usePolling: true, awaitWriteFinish: true, alwaysStat: true },
+            function () {
+                return gulp.start('build-model' + taskSuffix);
+            });
+    });
+
+    gulp.task('build-model' + taskSuffix, function () {
+        return gulp.src(sourcePath)
+            .pipe(gulpSchemaToTypescript(modelDirectory + "/model.ts"))
+            .pipe(gulp.dest(modelPath))
+    });
+}
+
+module.exports = { gulpSchemaToTypescript, gulpTasksModel };

@@ -55,7 +55,9 @@ describe('SchemaToTypescript', function () {
         it('should convert multiple files', function (done) {
             gulp.src(path.join(__dirname, 'fixtures', '/*'))
                 .pipe(schemaToTypescript({
-                    cwd: path.join(__dirname, 'fixtures')
+                    jsonSchemaToTypescriptOpt: {
+                        cwd: path.join(__dirname, 'fixtures')
+                    }
                 }))
                 .pipe(assert.length(2))
                 .pipe(assert.end(done));
@@ -65,7 +67,9 @@ describe('SchemaToTypescript', function () {
         it('should convert and write multiple files', function (done) {
             gulp.src(path.join(__dirname, 'fixtures', '/*'))
                 .pipe(schemaToTypescript({
-                    cwd: path.join(__dirname, 'fixtures')
+                    jsonSchemaToTypescriptOpt: {
+                        cwd: path.join(__dirname, 'fixtures')
+                    }
                 }))
                 .pipe(assert.length(2))
                 .pipe(gulp.dest(testFilesPath))

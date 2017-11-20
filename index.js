@@ -96,7 +96,7 @@ function gulpSchemaToTypescript(opt) {
  * @param modelDirectory Model file directory
  * @param taskSuffix Optional task suffix allow to create multiple tasks for differents model files, in case of sub-projects
  */
-function gulpTasksModel(gulp, sourcePath, modelDirectory, taskSuffix = null) {
+function gulpTasksModel(gulp, sourcePath, modelDirectory, taskSuffix = null, gulpSchemaToTypescriptOpt = {}) {
     if (typeof taskSuffix == 'string') {
         taskSuffix = '-' + taskSuffix;
     } else {
@@ -120,8 +120,8 @@ function gulpTasksModel(gulp, sourcePath, modelDirectory, taskSuffix = null) {
 
     gulp.task('build-model' + taskSuffix, function () {
         return gulp.src(sourcePath)
-            .pipe(gulpSchemaToTypescript(modelDirectory + "/model.ts"))
-            .pipe(gulp.dest(modelPath))
+            .pipe(gulpSchemaToTypescript(gulpSchemaToTypescriptOpt))
+            .pipe(gulp.dest(modelDirectory))
     });
 }
 

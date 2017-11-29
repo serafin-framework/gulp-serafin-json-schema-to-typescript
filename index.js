@@ -25,6 +25,7 @@ function gulpSchemaToTypescript(opt) {
     // default banner comment
     opt.bannerComment = opt.bannerComment || `/**
  * This file was automatically generated. DO NOT MODIFY.
+ * Generated with https://github.com/bcherny/json-schema-to-typescript
  */
 `
 
@@ -47,15 +48,28 @@ function gulpSchemaToTypescript(opt) {
         var schema = JSON.parse(file.contents);
         var id = schema.id;
         var modelName = _.upperFirst(_.camelCase((id ? id : file.path).split("/").slice(-1).join(" ").replace(".json", "")));
-        
+        if (!schema.definitions) {
+            schema.definitions = {
+                "createValues": toDefinitionSchema(schema, SCHEMA_FILTER_ALL, SCHEMA_FILTER_NO_ID),
+                "updateValues": toDefinitionSchema(schema, SCHEMA_FILTER_ALL, SCHEMA_FILTER_NO_ID),
+                "readQuery": toDefinitionSchema(schema, SCHEMA_FILTER_ALL, SCHEMA_FILTER_NONE),
+                "patchQuery": toDefinitionSchema(schema, SCHEMA_FILTER_ALL, SCHEMA_FILTER_ONLY_ID),
+                "patchValues": toDefinitionSchema(schema, SCHEMA_FILTER_NO_ID, SCHEMA_FILTER_NONE),
+                "deleteQuery": toDefinitionSchema(schema, SCHEMA_FILTER_ONLY_ID, SCHEMA_FILTER_ONLY_ID)
+            }
+        }
+
         // create a schema that forces reference to all definitions to ensure they are generated
         // it will be nice if it's added as an option of json-schema-to-typescript library...
         var fullSchema = {
-            definitions: _.clone(schema.definitions || {}),
-            allOf: [`#/definitions/${modelName}`, ...Object.keys(schema.definitions || {}).map(n => `#/definitions/${n}`)].map(p => { return { $ref: p } })
+            definitions: _.clone(schema.definitions),
+            allOf: [`#/definitions/${modelName}`, ...Object.keys(schema.definitions).map(n => `#/definitions/${n}`)].map(p => { return { $ref: p } })
         }
+        console.log(fullSchema);
         fullSchema.definitions[modelName] = schema;
+
         jsonSchemaToTypescript.compile(fullSchema, "_", jsonSchemaToTypescriptOpt).then(function (ts) {
+            console.log(ts);
             // generate import statement for Model Schema class
             if (opt.generateModelSchema) {
                 ts = `import { ${opt.modelSchemaClass} } from "${opt.modelSchemaPath}";\n\n${ts}`
@@ -71,7 +85,7 @@ function gulpSchemaToTypescript(opt) {
                         return ", any"
                     }
                 }).join("");
-                ts = `${ts}\n\nexport var ${_.lowerFirst(modelName)}Schema = new ${opt.modelSchemaClass}<${genericTypesDeclaration}>(${ JSON.stringify(schema) }, "${schema.id ? schema.id : modelName }");\n`
+                ts = `${ts}\n\nexport var ${_.lowerFirst(modelName)}Schema = new ${opt.modelSchemaClass}<${genericTypesDeclaration}>(${JSON.stringify(schema)}, "${schema.id ? schema.id : modelName}");\n`
             }
 
             var newFile = file.clone({ contents: false });
@@ -86,6 +100,34 @@ function gulpSchemaToTypescript(opt) {
 
 
     return through.obj(convertContents);
+}
+
+const SCHEMA_FILTER_NONE = 0;
+const SCHEMA_FILTER_ALL = 1;
+const SCHEMA_FILTER_NO_ID = 2;
+const SCHEMA_FILTER_ONLY_ID = 3;
+
+function toDefinitionSchema(schemaObject, propertiesFilter, requiredFilter) {
+    let schema = {
+        type: 'object',
+        properties: _.clone(schemaObject.properties),
+        additionalProperties: false
+    };
+
+    if (typeof schemaObject.required === 'object') {
+        schema.required = _.clone(schemaObject.required);
+        requiredFilter === SCHEMA_FILTER_ALL ||
+            (requiredFilter === SCHEMA_FILTER_ONLY_ID && (schema.required = _.filter(schema.required, (value) => value == 'id'))) ||
+            (requiredFilter === SCHEMA_FILTER_NO_ID && (schema.required = _.reject(schema.required, (value) => value == 'id'))) ||
+            delete schema.required;
+    }
+
+    propertiesFilter === SCHEMA_FILTER_ALL ||
+        (propertiesFilter === SCHEMA_FILTER_ONLY_ID && (schema.properties = _.pick(schema.properties, 'id'))) ||
+        (propertiesFilter === SCHEMA_FILTER_NO_ID && (schema.properties = _.omit(schema.properties, 'id'))) ||
+        (schema.properties = {});
+
+    return schema;
 }
 
 /**

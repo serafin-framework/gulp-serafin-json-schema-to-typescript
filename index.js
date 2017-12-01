@@ -54,10 +54,10 @@ function gulpSchemaToTypescript(opt) {
             schema.definitions = {
                 "createValues": toDefinitionSchema(schema, SCHEMA_FILTER_ALL, SCHEMA_FILTER_NO_ID),
                 "updateValues": toDefinitionSchema(schema, SCHEMA_FILTER_ALL, SCHEMA_FILTER_NO_ID),
-                "readQuery": toDefinitionSchema(schema, SCHEMA_FILTER_ALL, SCHEMA_FILTER_NONE),
-                "patchQuery": toDefinitionSchema(schema, SCHEMA_FILTER_ALL, SCHEMA_FILTER_ONLY_ID),
+                "readQuery": toDefinitionSchema(schema, SCHEMA_FILTER_ALL, SCHEMA_FILTER_NONE, true),
+                "patchQuery": toDefinitionSchema(schema, SCHEMA_FILTER_ALL, SCHEMA_FILTER_ONLY_ID, true),
                 "patchValues": toDefinitionSchema(schema, SCHEMA_FILTER_NO_ID, SCHEMA_FILTER_NONE),
-                "deleteQuery": toDefinitionSchema(schema, SCHEMA_FILTER_ONLY_ID, SCHEMA_FILTER_ONLY_ID)
+                "deleteQuery": toDefinitionSchema(schema, SCHEMA_FILTER_ONLY_ID, SCHEMA_FILTER_ONLY_ID, true)
             }
         }
 
@@ -101,7 +101,7 @@ const SCHEMA_FILTER_ALL = 1;
 const SCHEMA_FILTER_NO_ID = 2;
 const SCHEMA_FILTER_ONLY_ID = 3;
 
-function toDefinitionSchema(schemaObject, propertiesFilter, requiredFilter) {
+function toDefinitionSchema(schemaObject, propertiesFilter, requiredFilter, toArray = false) {
     let schema = {
         type: 'object',
         properties: _.clone(schemaObject.properties),
@@ -120,6 +120,18 @@ function toDefinitionSchema(schemaObject, propertiesFilter, requiredFilter) {
         (propertiesFilter === SCHEMA_FILTER_ONLY_ID && (schema.properties = _.pick(schema.properties, 'id'))) ||
         (propertiesFilter === SCHEMA_FILTER_NO_ID && (schema.properties = _.omit(schema.properties, 'id'))) ||
         (schema.properties = {});
+
+    if (toArray === true) {
+        for (let key in schema.properties) {
+            let description = schema.properties[key].description;
+            delete schema.properties[key].description;
+            if (schema.properties[key].type === 'array' && schema.properties[key].items) {
+                schema.properties[key] = { oneOf: [schema.properties[key].items, schema.properties[key]], description: description };
+            } else {
+                schema.properties[key] = { oneOf: [schema.properties[key], { type: 'array', items: schema.properties[key] }], description: description };
+            }
+        }
+    }
 
     return schema;
 }

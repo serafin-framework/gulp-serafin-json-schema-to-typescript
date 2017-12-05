@@ -21,7 +21,7 @@ function gulpSchemaToTypescript(opt) {
     // default value for modelSchemaPath
     opt.modelSchemaPath = opt.modelSchemaPath || "@serafin/api"
     // default value for modelSchemaClass
-    opt.modelSchemaClass = opt.modelSchemaClass || "PipelineSchemaModel"
+    opt.modelSchemaClass = opt.modelSchemaClass || "PipelineSchemaBuilderModel"
     // default banner comment
     opt.bannerComment = ""
     opt.banner = opt.banner || `/**

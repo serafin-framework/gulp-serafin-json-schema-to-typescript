@@ -1,4 +1,4 @@
-var schemaToTypescript = require('../');
+var schemaToTypescript = require('../').gulpSchemaToTypescript;
 var gulp = require('gulp');
 var fs = require('fs');
 var expect = require('chai').expect;

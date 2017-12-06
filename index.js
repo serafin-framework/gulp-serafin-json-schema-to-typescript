@@ -23,10 +23,8 @@ function gulpSchemaToTypescript(opt) {
     // default value for modelSchemaClass
     opt.modelSchemaClass = opt.modelSchemaClass || "PipelineSchemaBuilderModel"
     // default banner comment
-    opt.bannerComment = ""
     opt.banner = opt.banner || `/**
  * This file was automatically generated. DO NOT MODIFY.
- * Generated with https://github.com/bcherny/json-schema-to-typescript
  */
 
 `
@@ -48,8 +46,7 @@ function gulpSchemaToTypescript(opt) {
         // convert the schema to typescript with json-schema-to-typescript
         var _this = this;
         var schema = JSON.parse(file.contents);
-        var id = schema.id;
-        var modelName = _.upperFirst(_.camelCase((id ? id : file.path).split("/").slice(-1).join(" ").replace(".json", "")));
+        var modelName = _.upperFirst(_.camelCase((schema.title || file.path).split("/").slice(-1).join(" ").replace(".json", "")));
         if (!schema.definitions) {
             schema.definitions = {
                 "createValues": toDefinitionSchema(schema, SCHEMA_FILTER_ALL, SCHEMA_FILTER_NO_ID),
@@ -63,7 +60,7 @@ function gulpSchemaToTypescript(opt) {
 
         Promise.all(
             [jsonSchemaToTypescript.compile(schema, "_", jsonSchemaToTypescriptOpt), ...(Object.keys(schema.definitions).map(
-                (key) => jsonSchemaToTypescript.compile({ definitions: _.clone(schema.definitions), allOf: [{ $ref: `#/definitions/${key}` }] }, "_", opt)
+                (key) => jsonSchemaToTypescript.compile({ definitions: _.clone(schema.definitions), allOf: [{ $ref: `#/definitions/${key}` }] }, "_", jsonSchemaToTypescriptOpt)
             ))]
         ).then((schemaTs) => {
             var ts = schemaTs.join("\n");
@@ -71,7 +68,7 @@ function gulpSchemaToTypescript(opt) {
                 ts = `import { ${opt.modelSchemaClass} } from "${opt.modelSchemaPath}";\n\n${ts}`
             }
             // add a banner at the top
-            ts = opt.bannerComment + ts;
+            ts = opt.banner + ts;
             // add model schema declaration at the end
             if (opt.generateModelSchema) {
                 let genericTypesDeclaration = modelName + ["readQuery", "createValues", "updateValues", "patchQuery", "patchValues", "deleteQuery"].map(d => {
@@ -81,7 +78,7 @@ function gulpSchemaToTypescript(opt) {
                         return ", any"
                     }
                 }).join("");
-                ts = `${ts}\n\nexport var ${_.lowerFirst(modelName)}Schema = new ${opt.modelSchemaClass}<${genericTypesDeclaration}>(${JSON.stringify(schema)}, "${schema.id ? schema.id : modelName}");\n`
+                ts = `${ts}\n\nexport var ${_.lowerFirst(modelName)}Schema = new ${opt.modelSchemaClass}<${genericTypesDeclaration}>(${JSON.stringify(schema)}, "${schema.$id ? schema.$id : modelName}");\n`
             }
 
             var newFile = file.clone({ contents: false });

@@ -2,6 +2,7 @@
 /.vscode
 /.gitignore
 /.npmignore
+/.history
 .DS_Store
 /node_modules
 /npm-debug.log

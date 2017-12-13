@@ -16,6 +16,8 @@ function gulpSchemaToTypescript(opt) {
     jsonSchemaToTypescriptOpt.declareExternallyReferenced = true;
     // force empty banner comment for jsonSchemaToTypescript
     jsonSchemaToTypescriptOpt.bannerComment = "";
+    // force unreachableDefinitions to true
+    jsonSchemaToTypescriptOpt.unreachableDefinitions = true;
     // default value for generateModelSchema
     opt.generateModelSchema = opt.hasOwnProperty("generateModelSchema") ? opt.generateModelSchema : true
     // default value for modelSchemaPath
@@ -58,12 +60,7 @@ function gulpSchemaToTypescript(opt) {
             }
         }
 
-        Promise.all(
-            [jsonSchemaToTypescript.compile(schema, "_", jsonSchemaToTypescriptOpt), ...(Object.keys(schema.definitions).map(
-                (key) => jsonSchemaToTypescript.compile({ definitions: _.clone(schema.definitions), allOf: [{ $ref: `#/definitions/${key}` }] }, "_", jsonSchemaToTypescriptOpt)
-            ))]
-        ).then((schemaTs) => {
-            var ts = schemaTs.join("\n");
+        jsonSchemaToTypescript.compile(schema, "_", jsonSchemaToTypescriptOpt).then((ts) => {
             if (opt.generateModelSchema) {
                 ts = `import { ${opt.modelSchemaClass} } from "${opt.modelSchemaPath}";\n\n${ts}`
             }

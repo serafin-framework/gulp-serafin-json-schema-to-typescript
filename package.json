@@ -1,6 +1,6 @@
 {
     "name": "@serafin/gulp-serafin-json-schema-to-typescript",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "A dedicated wrapper around json-schema-to-typescript to convert Json schemas for serafin framework",
     "contributors": [
         {
